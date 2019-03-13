@@ -1,3 +1,4 @@
+
 typedef int T;
 
 typedef struct node_q{
