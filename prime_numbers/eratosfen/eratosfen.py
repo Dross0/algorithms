@@ -7,3 +7,9 @@ def eratosfen(n):
 				arr[j] = 0
 
 
+def main():
+	n = int(input("Верхняя граница: "))
+	eratosfen(n)
+
+if __name__ == '__main__':
+	main()
