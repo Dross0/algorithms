@@ -32,16 +32,11 @@ int main(){
 		if (!check_vertices(start, end, number_of_vertices)){
 			error("bad vertices");
 		}
-		graph[start-1] = add_to_list(graph[start-1], end);
+		graph[start-1] = add_to_list(graph[start-1], end-1);
 	}
 	if (edges_count != number_of_edges){
 		error("bad number of lines");
 	}
-	//for (i = 0; i < number_of_vertices; ++i){
-	//	printf("list: ");
-	//	print_list(graph[i]);
-	//	printf("\n");
-	//}
 	top_sort(graph, number_of_vertices);
 	for (i = 0; i < number_of_vertices; ++i){
 		free(graph[i]);
@@ -65,8 +60,6 @@ int dfs(node_t ** graph, int node, stack_t * stack, int vertices, char *color){
 		}
 		k = get_next_node(k);
 	}	
-	printf("stack: ");
-	print_stack(stack);
 	push(stack, node);
 	color[node] = BLACK;
 	return 0;
@@ -87,8 +80,6 @@ void top_sort(node_t **graph, int number_of_vertices){
 	}
 	free(color);
 	int size = stack.size;
-	printf("\n\nres: ");
-	print_stack(&stack);
 	for (i = 0; i < size; ++i){
 		printf("%d ", pop(&stack) + 1);
 	}
