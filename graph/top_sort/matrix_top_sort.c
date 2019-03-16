@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "stack.h"
-#include "list.h"
 
 typedef char bit;
 
 enum COLOR{ WHITE, GREY, BLACK};
 
-int dfs(node_t ** graph, int node, stack_t * stack, int vertices, char *color);
-void top_sort(node_t **graph, int number_of_vertices);
+int dfs(bit ** graph, int node, stack_t * stack, int vertices, char *color);
+void top_sort(bit **graph, int number_of_vertices);
 int check_input(int vertices, int edges);
 void error(char * error_msg);
 
@@ -22,8 +21,11 @@ int main(){
 	if (error_code){
 		error(error_code == 1 ? "bad number of vertices" : "bad number of edges");
 	}
-	node_t **graph = (node_t *)calloc(number_of_vertices, sizeof(node_t));
+	bit **graph = (bit *)malloc(sizeof(bit *) * number_of_vertices);
 	int i = 0;
+	for (i = 0; i < number_of_vertices; ++i){
+		graph[i] = (bit *)calloc(number_of_vertices, sizeof(bit));
+	}
 	unsigned int edges_count = 0;
 	int start = 0;
 	int end = 0;
@@ -32,16 +34,11 @@ int main(){
 		if (!check_vertices(start, end, number_of_vertices)){
 			error("bad vertices");
 		}
-		graph[start-1] = add_to_list(graph[start-1], end);
+		graph[start-1][end-1] = 1;
 	}
 	if (edges_count != number_of_edges){
 		error("bad number of lines");
 	}
-	//for (i = 0; i < number_of_vertices; ++i){
-	//	printf("list: ");
-	//	print_list(graph[i]);
-	//	printf("\n");
-	//}
 	top_sort(graph, number_of_vertices);
 	for (i = 0; i < number_of_vertices; ++i){
 		free(graph[i]);
@@ -50,7 +47,7 @@ int main(){
 	return 0;
 }
 
-int dfs(node_t ** graph, int node, stack_t * stack, int vertices, char *color){
+int dfs(bit ** graph, int node, stack_t * stack, int vertices, char *color){
 	if (color[node] == GREY){
 		return 1;
 	}
@@ -58,21 +55,18 @@ int dfs(node_t ** graph, int node, stack_t * stack, int vertices, char *color){
 		return 0;
 	}
 	color[node] = GREY;
-	node_t * k = graph[node];
-	while(k){
-		if (dfs(graph, k->data, stack, vertices, color)){
+	int i = 0;
+	for (i = 0; i < vertices; ++i){
+		if (graph[node][i] && dfs(graph, i, stack, vertices, color)){
 			return 1;
 		}
-		k = get_next_node(k);
-	}	
-	printf("stack: ");
-	print_stack(stack);
+	}
 	push(stack, node);
 	color[node] = BLACK;
 	return 0;
 }
 
-void top_sort(node_t **graph, int number_of_vertices){
+void top_sort(bit **graph, int number_of_vertices){
 	char * color = (char *)calloc(number_of_vertices, sizeof(char));
 	stack_t stack;
 	stack.size = 0;
@@ -87,8 +81,6 @@ void top_sort(node_t **graph, int number_of_vertices){
 	}
 	free(color);
 	int size = stack.size;
-	printf("\n\nres: ");
-	print_stack(&stack);
 	for (i = 0; i < size; ++i){
 		printf("%d ", pop(&stack) + 1);
 	}

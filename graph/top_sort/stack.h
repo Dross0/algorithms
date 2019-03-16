@@ -1,16 +1,16 @@
 typedef int T;
 
-typedef struct node_t{
+typedef struct node_s{
 	T key;
-	struct node_t * next;
-}node_t;
+	struct node_s * next;
+}node_s;
 
 typedef struct stack_t{
-	node_t * data;
+	node_s * data;
 	int size;
 }stack_t;
 
-node_t * new_node(T value);
+node_s * new_node(T value);
 void push(stack_t * stack, T value);
 T pop(stack_t * stack);
 T top(stack_t * stack);
