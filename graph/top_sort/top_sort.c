@@ -6,7 +6,7 @@ typedef char bit;
 
 enum COLOR{ WHITE, GREY, BLACK};
 
-int dfs(bit ** graph, int node, stack_t * stack, int vertices, int *color);
+int dfs(bit ** graph, int node, stack_t * stack, int vertices, char *color);
 void top_sort(bit **graph, int number_of_vertices);
 int check_input(int vertices, int edges);
 void error(char * error_msg);
@@ -14,8 +14,9 @@ void error(char * error_msg);
 int main(){
 	int number_of_vertices = 0;
 	int number_of_edges = 0;
-	scanf("%d", &number_of_vertices);
-	scanf("%d", & number_of_edges);
+	if (scanf("%d%d", &number_of_vertices, &number_of_edges) != 2){
+		error("bad number of lines");
+	}
 	int error_code = check_input(number_of_vertices, number_of_edges);
 	if (error_code){
 		error(error_code == 1 ? "bad number of vertices" : "bad number of edges");
@@ -39,11 +40,14 @@ int main(){
 		error("bad number of lines");
 	}
 	top_sort(graph, number_of_vertices);
+	for (i = 0; i < number_of_vertices; ++i){
+		free(graph[i]);
+	}
+	free(graph);
 	return 0;
 }
 
-int dfs(bit ** graph, int node, stack_t * stack, int vertices, int *color){
-	//printf("node %d \n", node);
+int dfs(bit ** graph, int node, stack_t * stack, int vertices, char *color){
 	if (color[node] == GREY){
 		return 1;
 	}
@@ -63,7 +67,7 @@ int dfs(bit ** graph, int node, stack_t * stack, int vertices, int *color){
 }
 
 void top_sort(bit **graph, int number_of_vertices){
-	int * color = (int *)calloc(number_of_vertices, sizeof(int));
+	char * color = (char *)calloc(number_of_vertices, sizeof(char));
 	stack_t stack;
 	stack.size = 0;
 	stack.data = NULL;
@@ -75,10 +79,12 @@ void top_sort(bit **graph, int number_of_vertices){
 			error("impossible to sort");
 		}
 	}
+	free(color);
 	int size = stack.size;
-	for (i = 0; i <= size; ++i){
+	for (i = 0; i < size; ++i){
 		printf("%d ", pop(&stack) + 1);
 	}
+	remove_stack(&stack);
 }
 
 int check_input(int vertices, int edges){
