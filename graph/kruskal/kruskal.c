@@ -8,11 +8,17 @@ typedef struct edge_t{
 	int end;
 }edge_t;
 
+typedef struct pair_t{
+	int first;
+	int second;
+}pair_t;
+
 void check_input(int vertices, int edges);
 int comp(const edge_t * edge1, const edge_t * edge2);
 void check_edge(edge_t edge, int vertices, int edges);
 void kruskal(edge_t * graph, int number_of_vertices, int number_of_edges);
 void check_number_of_lines(int number_of_lines, int number_of_edges);
+void print_res(pair_t * res, int len);
 void error(char * error_msg);
 
 int main(){
@@ -40,16 +46,21 @@ void kruskal(edge_t * graph, int number_of_vertices, int number_of_edges){
 	for (i = 0; i < number_of_vertices; ++i){
 		tree_id[i] = i;
 	}
+	pair_t *res = (pair_t *)malloc(sizeof(pair_t) * number_of_edges);
 	int start = 0;
 	int end = 0;
 	int new_id = 0;
 	int old_id = 0;
 	int j = 0;
+	int k = 0;
+	pair_t pair;
 	for (i = 0; i < number_of_edges; ++i){
 		start = graph[i].start - 1;
 		end = graph[i].end - 1;
 		if (tree_id[start] != tree_id[end]){
-			printf("%d %d\n", start + 1, end + 1);
+			pair.first = start + 1;
+			pair.second = end + 1;
+			res[k++] = pair;
 			old_id = tree_id[end];
 			new_id = tree_id[start];
 			for (j = 0; j < number_of_vertices; ++j){
@@ -59,7 +70,21 @@ void kruskal(edge_t * graph, int number_of_vertices, int number_of_edges){
 			}
 		}
 	}
+	for (i = 0; i < number_of_vertices; ++i){
+		if (tree_id[i] != tree_id[0]){
+			error("no spanning tree");
+		}
+	}
+	print_res(res, k);
+	free(res);
 	free(tree_id);
+}
+
+void print_res(pair_t * res, int len){
+	int i = 0;
+	for (i = 0; i < len; ++i){
+		printf("%d %d\n", res[i].first, res[i].second);
+	}
 }
 
 int comp(const edge_t * edge1, const edge_t * edge2){
@@ -68,6 +93,9 @@ int comp(const edge_t * edge1, const edge_t * edge2){
 
 
 void check_input(int vertices, int edges){
+	if (vertices == 0){
+		error("no spanning tree");
+	}
 	if (vertices < 0 || vertices > 5000){
 		error("bad number of vertices");
 	}
