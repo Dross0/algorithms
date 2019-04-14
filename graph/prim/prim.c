@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include <stdint.h>
 
-const int INF = INT_MAX - 1;
+
+typedef unsigned int uint;
+const uint INF = INT_MAX + 1;
 
 typedef struct edge_t{
 	int len;
@@ -21,11 +22,9 @@ void check_input(int vertices, int edges);
 void check_edge(edge_t edge, int vertices, int edges);
 void check_number_of_lines(int number_of_lines, int number_of_edges);
 void error(char * error_msg);
-void print_result(pair_t ** res, int len);
-pair_t * get_min(const int ** graph, const int * used, const int N);
-int get_min_edge(const int ** graph, const int * used, const int N, const int node);
-void prim(const int ** graph, const int N);
-int ** create_graph(const int N);
+void print_result(pair_t * res, int len);
+void prim(const uint ** graph, const int N);
+uint ** create_graph(const int N);
 
 
 
@@ -36,7 +35,7 @@ int main(){
 		error("bad number of lines");
 	}
 	check_input(number_of_vertices, number_of_edges);
-	int ** graph = create_graph(number_of_vertices);
+	uint ** graph = create_graph(number_of_vertices);
 	int number_of_lines = 0;
 	edge_t edge;
 	while (number_of_lines != number_of_edges && scanf("%d%d%d", &edge.start, &edge.end, &edge.len) == 3 && !feof(stdin)){
@@ -46,68 +45,54 @@ int main(){
         number_of_lines++;
 	}
 	check_number_of_lines(number_of_lines, number_of_edges);
-    prim(graph, number_of_vertices);
+	prim(graph, number_of_vertices);
 }
 
-int get_min_edge(const int ** graph, const int * used, const int N, const int node){
-    int min_node = -1;
-    int min_len = INF;
+void prim(const uint ** graph, const int N){ 
+	int * used = (int *)calloc(N, sizeof(int));
+	uint * min_len_for_node = (uint *)malloc(N *sizeof(uint));
+	int * min_edge_for_node = (int *)malloc(sizeof(int) * N);
+	pair_t * res = (pair_t *)malloc(sizeof(pair_t) * (N-1));
+	pair_t edge;
+	int i = 0;
+	for (i = 0; i < N; ++i){
+	 	min_len_for_node[i] = INF;
+		min_edge_for_node[i] = -1;
+	}
+	int k = 0;
+	int vert = 0;
+	int j = 0;
+ 	min_len_for_node[0] = 0;
+	for (i = 0; i < N; ++i) {
+    	vert = -1;
+    	for (j = 0; j < N; ++j)
+        	if (!used[j] && (vert == -1 || min_len_for_node[j] < min_len_for_node[vert]))
+            	vert = j;
+    	if  (min_len_for_node[vert] == INF) {
+        	error("no spanning tree");
+    	} 
+    	used[vert] = 1;
+    	if (min_edge_for_node[vert] != -1){
+    		edge.first = vert;
+    		edge.second = min_edge_for_node[vert];
+        	res[k++] = edge;
+    	}
+ 		int node = 0;
+    	for (node=0; node < N; ++node){
+        	if (!used[node] && graph[vert][node] < min_len_for_node[node]) {
+             	min_len_for_node[node] = graph[vert][node];
+            	min_edge_for_node[node] = vert;
+        	}
+    	}
+    }
+    print_result(res, k);
+}
+
+uint ** create_graph(const int N){
+    uint **graph = (uint *)malloc(sizeof(uint *) * N);
     int i = 0;
     for (i = 0; i < N; ++i){
-        if (!used[i] && graph[node][i] < min_len){
-            min_len = graph[node][i];
-            min_node = i;
-        }
-    }
-    return min_node;
-}
-
-pair_t * get_min(const int ** graph, const int * used, const int N){
-    pair_t * pair = (pair_t *)malloc(sizeof(pair_t));
-    pair->first = -1;
-    pair->second = -1;
-    int min_len = INF;
-    int i = 0;
-    int node = -1;
-    for (i = 0; i < N; ++i){
-        if (used[i]){
-            node = get_min_edge(graph, used, N, i);
-            if (node != -1 && graph[i][node] < min_len){
-                min_len = graph[i][node];
-                pair->first = i;
-                pair->second = node;  
-            }
-        }
-    }
-    return pair;
-}
-
-void prim(const int ** graph, const int N){
-    int * used = (int *)calloc(N, sizeof(int));
-    pair_t ** res = (pair_t *)malloc(sizeof(pair_t *) * (N-1));
-    int i = 0;
-    int j = 0;
-    used[0] = 1;
-    pair_t * edge = 0;
-    while (i < (N - 1)){
-        edge = get_min(graph, used, N);
-        if (edge->first == -1 || edge->second == -1){
-            error("no spanning tree");
-        }
-        used[edge->second] = 1;
-        used[edge->first] = 1;
-        res[j++] = edge;
-        i++;
-    }
-    print_result(res, j);
-}
-
-
-int ** create_graph(const int N){
-    int **graph = (int *)malloc(sizeof(int *) * N);
-    int i = 0;
-    for (i = 0; i < N; ++i){
-        graph[i] = (int *)malloc(sizeof(int) * N);
+        graph[i] = (uint *)malloc(sizeof(uint) * N);
         for (int j = 0; j < N; ++j){
             graph[i][j] = INF;
         }
@@ -115,17 +100,17 @@ int ** create_graph(const int N){
     return graph;
 }
 
-
-void print_result(pair_t ** res, int len){
+void print_result(pair_t * res, int len){
 	int i = 0;
 	for (i = 0; i < len; ++i){
-		printf("%d %d\n", res[i]->first + 1, res[i]->second + 1);
+		printf("%d %d\n", res[i].first + 1, res[i].second + 1);
 	}
 }
 
-
-
 void check_input(int vertices, int edges){
+	if (vertices == 0 && edges == 0){
+		error("no spanning tree");
+	}
 	if (vertices < 0 || vertices > 5000){
 		error("bad number of vertices");
 	}
