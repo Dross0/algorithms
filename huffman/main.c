@@ -129,41 +129,66 @@ void decompression(FILE * in){
 
 tree_node_t * make_tree(uchar * alphabet_str, const int alphabet_str_size){
 	tree_node_t * root = 0;
-	uchar * byte_str = (uchar *)calloc(alphabet_str_size * 8, sizeof(uchar));
+	int byte_str_size = alphabet_str_size * 8;
+	uchar * byte_str = (uchar *)calloc(byte_str_size + 1, sizeof(uchar));
 	make_byte_str(byte_str, alphabet_str, alphabet_str_size);
-	for (int i = 0; i < alphabet_str_size; ++i){
-		
+	if (byte_str[0] == '0'){
+		root = create_node(0, 0, 0);
 	}
-	
-	//
-	int size = 0;
-	for (int i = 0; i < code_table_size; ++i){
-		cur = root;
-		size = strlen(code_table[i].code);
-		for (int j = 0; j < size; ++j){
-			if (code_table[i].code[j] == '0'){
-				if (cur->left == NULL){
-					cur->left = create_node(0, 0, 0);
-				}
-				if (j == (size - 1)){
-					cur->left->symbol = code_table[i].symbol;
-				}
-				cur = cur->left;
-			}
-			else if (code_table[i].code[j] == '1'){
-				if (cur->right == NULL){
-					cur->right = create_node(0,0,0);
-				}
-				if (j == (size - 1)){
-					cur->right->symbol = code_table[i].symbol;
-				}
-				cur = cur->right;
-			}
-		}
+	else{
+		error("Bad alphabet string", 4);
+	}
+	tree_node_t * cur = root;
+	for (int i = 1; i < byte_str_size; ++i){
+		if (byte_str[i] == '0'){
 
+		}
 	}
-	return root;
 }
+
+void tr(tree_node_t * root, uchar * str, const int str_size, int * pos){
+	int p = *pos;
+	if (p >= str_size){
+		error("Index error", 5);
+	}
+	if (str[p] == '0'){
+		if (root->left == NULL){
+			root->left = create_node(0, 0, 0);
+			*pos += 1;
+			tr(root->left, str, str_size, pos);
+		}
+		if (root->right == NULL){
+			root->right = create_node(0, 0, 0);
+			*pos += 1;
+			tr(root->right, str, str_size, pos);
+		}		
+	}
+	else if (str[p] == '1'){
+		*pos += 1;
+		uchar symbol = take_symbol_from_str(str, str_size, pos);
+		*pos += 8;
+		if (root->left == NULL){
+			root->left = create_node(symbol, 0, 0);
+		}
+		else if (root->right == NULL){
+			root->right = create_node(symbol, 0, 0);
+		} 
+		tr(root, str, str_size, pos);		
+	}
+}
+
+uchar take_symbol_from_str(uchar * str, const int str_size, int pos){
+	if (pos + 8 >= str_size){
+		error("Index error", 10);
+	}
+	uchar byte[9] = {0};
+	int j = 0;
+	for (int i = pos; j < 8; ++i, ++j){
+		byte[j] = str[i];
+	}
+	retrurn convert_binary_to_int(byte);
+}
+
 
 tree_node_t * create_node(const int symbol, tree_node_t * right, tree_node_t * left){
 	tree_node_t * tmp = (tree_node_t *)malloc(sizeof(tree_node_t));
