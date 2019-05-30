@@ -34,25 +34,25 @@ void make_compression(node_t * code_tree, pair_t * code_table, const size_t code
 void save_file_info(node_t * code_tree, const size_t code_table_size, const int file_size, FILE * out);
 void decompression(FILE * in);
 void compression(FILE * in);
-void get_code_table_from_file(pair_t * code_table, const code_table_size, FILE * in);
 void make_byte_str(uchar * byte_str, uchar * buffer, const int size);
 int decoding(tree_node_t * code_tree, uchar * buffer, const int size, const int file_size, int real_file_size, FILE * out);
 uchar * dec_to_binary(uchar symbol);
-tree_node_t * make_tree(pair_t * code_table, const int code_table_size);
+tree_node_t * make_tree(uchar * alphabet_str, const int alphabet_str_size);
 tree_node_t * create_node(const int symbol, tree_node_t * right, tree_node_t * left);
 uchar * get_byte_alphabet_str(node_t * code_tree, const int code_table_size, FILE * out);
 void make_alphabet_str(node_t * tree, uchar * str, int str_index);
+uchar take_symbol_from_str(uchar * str, const int str_size, int pos);
 
 
 int main(){
-	FILE * in = fopen("huffman\\out.txt", "rb");
+	FILE * in = fopen("in.txt", "rb");
 	if (in == NULL) {
 		error("Cant open input file", 0);
 	}
 	char mode = 0;
-	//fscanf(in, "%c\n", &mode);
-	//compression(in);
-	decompression(in);
+	fscanf(in, "%c\n", &mode);
+	compression(in);
+	//decompression(in);
 	/*if (mode == COMPRESSION){
 		compression(in);
 	}
@@ -107,14 +107,13 @@ void decompression(FILE * in){
 	int alphabet_str_size = 0;
 	fread(&file_size, sizeof(int), 1, in);
 	fread(&alphabet_str_size, sizeof(int), 1, in);
-	printf("%d %d\n", file_size, code_table_size);
+	printf("%d %d\n", file_size, alphabet_str_size);
 	uchar * alphabet_str = (uchar *)malloc((alphabet_str_size + 1) * sizeof(uchar));
 	fread(alphabet_str, sizeof(uchar), alphabet_str_size, in);
-	//get_code_table_from_file(code_table, code_table_size, in);
 	//for (int i = 0; i < code_table_size; ++i){
 	//	printf("%c == %s\n", code_table[i].symbol, code_table[i].code);
 	//}
-	tree_node_t * code_tree = make_tree(code_table, code_table_size);
+	tree_node_t * code_tree = make_tree(alphabet_str, alphabet_str_size);
 	FILE * out = fopen("dec_out.txt", "w");
 	if (out == NULL){
 		error("Cant open output file", 3);
@@ -128,22 +127,21 @@ void decompression(FILE * in){
 }
 
 tree_node_t * make_tree(uchar * alphabet_str, const int alphabet_str_size){
-	tree_node_t * root = 0;
-	int byte_str_size = alphabet_str_size * 8;
+	tree_node_t * root = 0; 
+	printf("alph = %d\n", alphabet_str_size);
+	int size = (alphabet_str_size % 8 == 0) ? alphabet_str_size / 8 : (alphabet_str_size / 8) + 1;
+	int byte_str_size = size * 8;
 	uchar * byte_str = (uchar *)calloc(byte_str_size + 1, sizeof(uchar));
 	make_byte_str(byte_str, alphabet_str, alphabet_str_size);
-	if (byte_str[0] == '0'){
+	int pos = 0;
+	if (byte_str[pos++] == '0'){
 		root = create_node(0, 0, 0);
 	}
 	else{
 		error("Bad alphabet string", 4);
 	}
-	tree_node_t * cur = root;
-	for (int i = 1; i < byte_str_size; ++i){
-		if (byte_str[i] == '0'){
-
-		}
-	}
+	printf("%s\n", byte_str);
+	tr(root, byte_str, byte_str_size, &pos);
 }
 
 void tr(tree_node_t * root, uchar * str, const int str_size, int * pos){
@@ -165,7 +163,7 @@ void tr(tree_node_t * root, uchar * str, const int str_size, int * pos){
 	}
 	else if (str[p] == '1'){
 		*pos += 1;
-		uchar symbol = take_symbol_from_str(str, str_size, pos);
+		uchar symbol = take_symbol_from_str(str, str_size, *pos);
 		*pos += 8;
 		if (root->left == NULL){
 			root->left = create_node(symbol, 0, 0);
@@ -186,7 +184,7 @@ uchar take_symbol_from_str(uchar * str, const int str_size, int pos){
 	for (int i = pos; j < 8; ++i, ++j){
 		byte[j] = str[i];
 	}
-	retrurn convert_binary_to_int(byte);
+	return convert_binary_to_int(byte);
 }
 
 
@@ -256,26 +254,6 @@ void reverse(uchar * str, const int size){
 	}
 }
 
-void get_code_table_from_file(pair_t * code_table, const code_table_size, FILE * in) {
-	uchar symbol = 0;
-	pair_t pair;
-	uchar ch = 0;
-	int code_index = 0;
-	fread(&(pair.symbol), sizeof(uchar), 1, in);	
-	for (int i = 0; i < code_table_size; ++i){
-		uchar * code = (uchar *)calloc(16, sizeof(uchar));
-		fread(&ch, sizeof(uchar), 1, in);
-		while (ch == '1' || ch == '0'){
-			code[code_index++] = ch;
-			fread(&ch, sizeof(uchar), 1, in);
-		}
-		pair.code = code;
-		code_index = 0;
-		code_table[i] = pair;
-		pair.symbol = ch;
-	}
-	fseek(in, -1, SEEK_CUR);
-}
 
 void make_compression(node_t * code_tree, pair_t * code_table, const size_t code_table_size, FILE * in, const int file_size) {
 	const int BYTE_SIZE = 8;
@@ -305,17 +283,18 @@ void make_compression(node_t * code_tree, pair_t * code_table, const size_t code
 	fclose(out);
 }
 
-void save_file_info(note_t * code_tree, const size_t code_table_size, const int file_size, FILE * out){
+void save_file_info(node_t * code_tree, const size_t code_table_size, const int file_size, FILE * out){
 	fwrite(&file_size, sizeof(int), 1, out);
 	uchar * alphabet_str = get_byte_alphabet_str(code_tree, code_table_size, out);
 	int alphabet_str_size = strlen(alphabet_str);
-	fwrite(&alphabet_str_size, sizeof(int), 1, out);
+	//fwrite(&alphabet_str_size, sizeof(int), 1, out); delete
 	fwrite(alphabet_str, sizeof(uchar), alphabet_str_size, out);
 }
 
 uchar * get_byte_alphabet_str(node_t * code_tree, const int code_table_size, FILE * out){
 	uchar * str = (uchar *)calloc((code_table_size * 8) + 200, sizeof(uchar));
-	tr(code_tree, str, 0);
+	make_alphabet_str(code_tree, str, 0);
+	printf("%s\n", str);
 	int size = strlen(str);
 	uchar * res_str = (uchar *)calloc(size / 8 + 2, sizeof(uchar));
 	int res_str_index = 0; 
@@ -343,8 +322,12 @@ uchar * get_byte_alphabet_str(node_t * code_tree, const int code_table_size, FIL
 void make_alphabet_str(node_t * tree, uchar * str, int str_index){
 	if (tree->symbol == 0){
 		str[str_index++] = '0';
-		tr(tree->left, str, str_index);
-		tr(tree->right, str, str_index);
+		if (tree->left){
+			make_alphabet_str(tree->left, str, str_index);
+		}
+		if (tree->right){
+			make_alphabet_str(tree->right, str, str_index);
+		}
 	}
 	else{
 		str[str_index++] = '1';
@@ -500,6 +483,6 @@ int change_frequency(int * frequency_table, uchar * buffer, int size, const int 
 }
 
 void error(char * err_msg, int err_code) {
-	printf("%s\n", err_msg);
+	printf("%s %d\n", err_msg, err_code);
 	exit(err_code);
 }
